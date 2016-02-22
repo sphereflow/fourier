@@ -1,0 +1,61 @@
+name:                fourier
+version:             0.1.0.0
+synopsis:            Initial project template from stack
+description:         Please see README.md
+homepage:            http://github.com/sphereflow/fourier#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Johann Prescher
+maintainer:          johannprescher@gmx.de
+copyright:           none
+category:            none
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Huffman, MyRepaToHMatrix
+  build-depends:       base >= 4.7 && < 5
+                     , vector
+                     , binary
+                     , vector-binary-instances
+                     , vector-algorithms
+                     , containers
+                     , bytestring
+                     , hmatrix < 0.17
+                     , repa
+  default-language:    Haskell2010
+
+executable fourier-exe
+  hs-source-dirs:      app
+  main-is:             hmatrix_intro.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , fourier
+                     , vector
+                     , bytestring
+                     , binary
+                     , mtl
+                     , either
+                     , gtk
+                     , hmatrix
+                     , QuickCheck
+                     , split
+                     , repa
+                     , repa-io
+
+  default-language:    Haskell2010
+
+test-suite fourier-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , fourier
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/sphereflow/fourier
