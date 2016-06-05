@@ -16,22 +16,17 @@ import qualified Data.Vector.Algorithms.Intro as VAI
 import Control.Monad.ST
 import Data.Ord
 import Debug.Trace
+import Test.QuickCheck
 
--- Huffman encoding
+-- TODO : add some criterion benchmarks
 -- binary tree data structure for huffman encoding
 data BinT a = Branch {count :: Int, rTree :: BinT a, lTree :: BinT a} | Leaf { count :: Int, dec :: a } | Empty
-   deriving (Show, Generic)
+   deriving (Show, Generic, Eq)
 -- Ord instance for BinT a to be able to sort
 instance Ord a => Ord (BinT a) where
    compare = cmpTrees
 
 instance Binary a => Binary (BinT a) 
-
-instance Eq a => Eq (BinT a) where
-   (==) Empty Empty = True
-   (==) (Leaf c d) (Leaf e f) = (c == e) && (d == f)
-   (==) (Branch c1 r1 l1) (Branch c2 r2 l2) = (c1 == c2) && (r1 == r2) && (l1 == l2)
-   (==) _ _ = False
 
 type HuffBit = Word8
 
@@ -91,14 +86,15 @@ vecHuffmanEncodeFromMapping m = UV.concatMap (locallookup m)
 
 huffmanEncode :: (Ord a, Binary a, UV.Unbox a, Show a) => UV.Vector a -> L.ByteString
 huffmanEncode vec
-   -- if there is only 1 element repeated length is the length of the unencoded values
-   | Map.size mapping == 1 = encode (htree, UV.length vec, hencodedToWordVec encoded)
-   -- otherwise length is the length of the encoded but not packed bits
-   | otherwise = encode (htree, UV.length encoded, hencodedToWordVec encoded)
-   where 
-      mapping = createMapping htree [] Map.empty
-      htree = huffmanTree vec
-      encoded = vecHuffmanEncodeFromMapping mapping vec
+  -- if there is only 1 element repeated length is the length of the unencoded values
+  -- TODO : investigate removing special case
+  | Map.size mapping == 1 = encode (htree, UV.length vec, hencodedToWordVec encoded)
+  -- otherwise length is the length of the encoded but not packed bits
+  | otherwise = encode (htree, UV.length encoded, hencodedToWordVec encoded)
+  where 
+    mapping = createMapping htree [] Map.empty
+    htree = huffmanTree vec
+    encoded = vecHuffmanEncodeFromMapping mapping vec
 
 hencodedToWordVec :: UV.Vector HuffBit -> UV.Vector Word8
 hencodedToWordVec vec = UV.fromList $ map packToWord (chop8 vec)
@@ -127,9 +123,11 @@ huffmanDecode bs = case htree of
       --imapping = Map.fromList $ zip (map UV.fromList vals) ks
       (htree, len, encList) = decode bs :: (Binary a) => (BinT a, Int, UV.Vector Word8) 
 
--- TODO : add Quickcheck test for huffmanEn/Decode
 cdTest :: [Int] -> Bool
-cdTest s = UV.toList ((huffmanDecode . huffmanEncode) (UV.fromList s) :: UV.Vector Int) == s
+cdTest s = (UV.toList . huffmanDecode . huffmanEncode . UV.fromList) s == s
+
+qcHuffman :: IO ()
+qcHuffman = quickCheckWith stdArgs { maxSuccess = 500} cdTest
 
 wordListToHEncoded :: Int -> UV.Vector Word8 -> [HuffBit]
 wordListToHEncoded len v
