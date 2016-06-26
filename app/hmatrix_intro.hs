@@ -43,6 +43,7 @@ import Numeric.LinearAlgebra
 import qualified Data.Vector.Storable as VEC
 import qualified Data.Vector.Unboxed as UV
 import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString as BS
 import qualified Data.Binary as BIN (Binary (..), encode, decode)
 import Control.Arrow
 import Control.Monad.ST (runST)
@@ -173,7 +174,7 @@ imageToRepaBMP i = runST $ R.computeUnboxedP $ R.map yCbCrToRGB (RV.zip3 ry rcb 
       [ry, rcb, rcr] = map matrixToRepa [p1 bigTile, p2 bigTile, p3 bigTile]
 
 encodeImage :: ImageEnv -> Image Double -> L.ByteString
-encodeImage ie im@(Image _ w h bs) =  BIN.encode (EncodedImage het w h bs)
+encodeImage ie im@(Image _ w h bs) =  BIN.encode (EncodedImage (map L.fromStrict het) w h bs)
    where
       -- tranformed and quantized image
       (Image qtt _ _ _) = mapImage (applyToPlanes (quantize (quantizeDouble ie)) . transform2D haarCoeff) im
@@ -187,7 +188,7 @@ decodeImage ie bytes = mapImage (itransform2D ie . applyToPlanes (dequantize $ q
    where
       (EncodedImage het ew eh ebs) = BIN.decode bytes :: EncodedImage
       -- [L.ByteString] --> [UV.Vector Int] --> run length decode --> [Tile]
-      tls = fromVList ie [ rld (huffmanDecode t :: (UV.Vector Int)) | t <- het ]
+      tls = fromVList ie [ rld (huffmanDecode (L.toStrict t) :: (UV.Vector (Int, Int))) | t <- het ]
 
 qcEnDecodeImage :: Image Double -> Bool
 qcEnDecodeImage i = meanAbsDistance (p1 $ head $ tiles i) (p1 $ head $ tiles deci) <= 3
