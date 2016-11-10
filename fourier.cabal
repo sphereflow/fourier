@@ -23,7 +23,7 @@ library
                      , cereal
                      , cereal-vector
                      , bytestring
-                     , hmatrix < 0.18
+                     , hmatrix
                      , repa
                      , QuickCheck >= 2.8
                      , ansi-wl-pprint
